@@ -1485,6 +1485,18 @@ func (s *DeviceState) deactivateFabricPartition(claimUID string, pc *PreparedCla
 	if err := s.fmManager.DeactivatePartition(partitionID); err != nil {
 		return fmt.Errorf("deactivating fabric partition %d: %w", partitionID, err)
 	}
+	// Full GPUs stay on the NVIDIA driver and do not pass through VFIO
+	// Unconfigure, which restores persistence. Enable it only after the
+	// partition is inactive, including on retries after partial cleanup.
+	for _, device := range s.getAllocatableDevicesForClaim(claimUID, *pc) {
+		if device.Type() != GpuDeviceType {
+			continue
+		}
+		gpu := device.Gpu
+		if err := s.nvdevlib.enableGPUPersistenceMode(gpu.pciBusID); err != nil {
+			return fmt.Errorf("enabling persistence for GPU %s (PCI %s): %w", gpu.UUID, gpu.pciBusID, err)
+		}
+	}
 	return nil
 }
 
