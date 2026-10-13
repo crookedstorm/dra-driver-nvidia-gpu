@@ -70,8 +70,13 @@ persistence fails, the driver returns an error without activating the partition.
 An already-active partition skips this step. The driver rejects activation
 of a partition that overlaps another active partition before changing
 persistence. GPUs outside the requested partition are not changed.
+Full-GPU cleanup enables legacy persistence after successful partition
+deactivation, once no other claim uses the GPUs. This also applies to cleanup
+of partially prepared claims. If enabling persistence fails, cleanup returns an
+error and retries even when the partition is already inactive.
 VFIO cleanup continues to enable persistence when returning GPUs to the
-NVIDIA driver; the next partition activation disables it again.
+NVIDIA driver. Both paths enable persistence rather than restoring its original
+setting; the next partition activation disables it again.
 
 ## Prerequisites
 
